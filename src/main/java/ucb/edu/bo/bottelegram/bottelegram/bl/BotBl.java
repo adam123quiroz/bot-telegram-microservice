@@ -3,6 +3,7 @@ package ucb.edu.bo.bottelegram.bottelegram.bl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import ucb.edu.bo.bottelegram.bottelegram.model.AuthModel;
 import ucb.edu.bo.bottelegram.bottelegram.model.MessageReportModel;
 import ucb.edu.bo.bottelegram.bottelegram.rest.RestApiController;
 
@@ -17,6 +18,8 @@ public class BotBl {
     final
     RestApiController restApiController;
 
+    private String auth = "";
+
     public BotBl(RestApiController restApiController) {
         this.restApiController = restApiController;
     }
@@ -24,13 +27,18 @@ public class BotBl {
 
     public List<String> processUpdate(Update update) {
         List<String> chatResponse = new ArrayList<>();
+        AuthModel authModel = restApiController.authenticateApi();
+        auth = authModel.getAuthentication();
+        log.info("AUTHHH " + auth);
+
         continueChat(update, chatResponse);
         return chatResponse;
     }
 //
     private void continueChat(Update update, List<String> chatResponse) {
         String message = update.getMessage().getText();
-        MessageReportModel messageReportModel = restApiController.getAllDataApi(separateWhiteSpace(message));
+        log.info("SECOND AUTHHH " + auth);
+        MessageReportModel messageReportModel = restApiController.getAllDataApi(separateWhiteSpace(message), auth);
 
         chatResponse.add(concatDataCases(
                 messageReportModel.getPlace(),
@@ -46,8 +54,8 @@ public class BotBl {
     }
 //
     private String concatDataCases(String location, Integer totalCases, Integer deaths, Integer recovered, Integer activeCase, Integer todayCases, Integer todayDeaths) {
-        return location +
-                String.format("\n*Casos:* %d\n*Decesos:* %d\n*Recuperados:* %d\n*Casos Activos:* %d\n\n*Casos de Hoy:* %d\n*Muertes de Hoy:* %d",
+        return "*"+location+"*"+
+                String.format("\n\n*Casos:* %d\n*Decesos:* %d\n*Recuperados:* %d\n*Casos Activos:* %d\n\n*Casos de Hoy:* %d\n*Muertes de Hoy:* %d",
                         totalCases, deaths, recovered, activeCase, todayCases, todayDeaths);
     }
 
@@ -61,9 +69,6 @@ public class BotBl {
         } else {
             String startMessage = temp.substring(0, indexSpace);
             String department = temp.substring(indexSpace + 1);
-
-//            List<DepartmentDto> departmentDtoList = departmentBl.findAllDepartmentsBySimilar(department);
-//            String departmentDatabase = departmentDtoList.get(0).getDepartment();
 
             stringMap.put("starMessage", startMessage);
             stringMap.put("department", department);
